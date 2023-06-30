@@ -1,0 +1,26 @@
+[package]
+name = "token_exchange"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "token_exchange"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.27.0"
+anchor-spl = "0.27.0"
+mpl-token-metadata = {version = "1.2.0", features =["no-entrypoint"]}
+clockwork-sdk = "2.0.17"
+winnow="=0.4.1"
+toml_datetime="=0.6.1"
+getrandom = { version = "0.2.9", features = ["custom"] }
+solana-program = "=1.14.17"
