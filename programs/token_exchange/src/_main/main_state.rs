@@ -13,14 +13,14 @@ impl MainState {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Default, Clone, Copy)]
 pub struct MainStateInput {
-    // pub owner: Pubkey,
+    // pub owner: Pubkey, // ???
     pub fee_receiver: Pubkey,
     pub fee_rate: u64,
 }
 
 impl MainStateInput {
     pub fn set_value(&self, state: &mut Account<MainState>) {
-        // state.owner= self.owner;
+        // state.owner= self.owner; // ???
         state.fee_receiver = self.fee_receiver;
         state.fee_rate = self.fee_rate as f64 / 1000_000f64 / 100f64;
     }

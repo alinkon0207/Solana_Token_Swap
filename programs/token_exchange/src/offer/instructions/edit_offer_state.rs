@@ -35,6 +35,8 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
+    // ??? require(offer_state.offer == msg.sender, "Caller has not created the offer");
+
     if let Some(amount) = input.inc_received_token_amount.clone(){
         offer_state.requested_amount += amount;
     }
@@ -47,19 +49,19 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
     }
 
     // Reseting ratio
-    if offered_token_decimal > requested_token_decimal{
-        let diff = offered_token_decimal - requested_token_decimal;
-        offer_state.ratio = (offer_state.requested_amount * 10u64.pow(diff as u32)) as f64 / offer_state.offered_amount as f64 ;
+    // if offered_token_decimal > requested_token_decimal{
+    //     let diff = offered_token_decimal - requested_token_decimal;
+    //     offer_state.ratio = (offer_state.requested_amount * 10u64.pow(diff as u32)) as f64 / offer_state.offered_amount as f64 ;
 
-    }else if offered_token_decimal < requested_token_decimal{
-        let diff = requested_token_decimal - offered_token_decimal;
-        // offer_state.ratio = (offer_state.offered_amount * 10u64.pow(diff as u32)) as f64 / offer_state.requested_amount as f64;
-        offer_state.ratio = offer_state.requested_amount as f64 / (offer_state.offered_amount * 10u64.pow(diff as u32)) as f64;
+    // }else if offered_token_decimal < requested_token_decimal{
+    //     let diff = requested_token_decimal - offered_token_decimal;
+    //     // offer_state.ratio = (offer_state.offered_amount * 10u64.pow(diff as u32)) as f64 / offer_state.requested_amount as f64;
+    //     offer_state.ratio = offer_state.requested_amount as f64 / (offer_state.offered_amount * 10u64.pow(diff as u32)) as f64;
 
-    }else{
-        // offer_state.ratio = offer_state.offered_amount as f64 / offer_state.requested_amount as f64;
-        offer_state.ratio = offer_state.requested_amount as f64 / offer_state.offered_amount as f64 ;
-    }
+    // }else{
+    //     // offer_state.ratio = offer_state.offered_amount as f64 / offer_state.requested_amount as f64;
+    //     offer_state.ratio = offer_state.requested_amount as f64 / offer_state.offered_amount as f64 ;
+    // }
     
     // let (_, bump) = Pubkey::find_program_address(&[
     //         SEED_OFFER, 
@@ -117,7 +119,7 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
         offer_id: ctx.accounts.offer_state_account.key(),
         inc_requested_amount: input.inc_received_token_amount,
         dec_requested_amount: input.dec_received_token_amount,
-        ratio: ctx.accounts.offer_state_account.ratio,
+        // ratio: ctx.accounts.offer_state_account.ratio,
     });
     Ok(())
 }

@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct AllowedTokenState {
     pub mint: Pubkey,
-    pub feature_1: f64,
+    pub feature_1: f64, // ???
     pub is_allowed: bool,
 }
 

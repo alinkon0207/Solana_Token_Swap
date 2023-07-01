@@ -15,6 +15,7 @@ pub fn close_offer(ctx: Context<ACloseOffer>)-> Result<()>{
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
+    // ??? require(offer_state.offer == msg.sender, "Caller has not created the offer");
 
     //NOTE: Let token amount tranfer back to the offeror
     if offer_state.offered_amount > 0 {

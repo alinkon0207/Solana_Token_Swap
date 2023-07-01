@@ -4,7 +4,7 @@ import { Program } from "@coral-xyz/anchor";
 import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TokenExchange } from "../target/types/token_exchange";
 
-describe("Adming Calls", () => {
+describe("Token_Swap", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     const provider = anchor.AnchorProvider.env()
@@ -59,21 +59,21 @@ describe("Adming Calls", () => {
     //     }).rpc();
     // });
 
-    it("Allowed token", async () => {
-        const a = new web3.PublicKey("D8jzT2tFPoneyG8vXer6Krw1hCfXrAWCAAKUqfMp9QC3")
-        const b = new web3.PublicKey("Aeau4hdegEeFL26NACXZoXJVmJam99tdPk3VQKNtYdxf")
-        const current = b;
-        const allowTokenStateAccount = __getAllowTokenCheckAccount(current);
+    // it("Allowed token", async () => {
+    //     const a = new web3.PublicKey("D8jzT2tFPoneyG8vXer6Krw1hCfXrAWCAAKUqfMp9QC3")
+    //     const b = new web3.PublicKey("Aeau4hdegEeFL26NACXZoXJVmJam99tdPk3VQKNtYdxf")
+    //     const current = b;
+    //     const allowTokenStateAccount = __getAllowTokenCheckAccount(current);
 
-        const res = await program.methods.allowToken().accounts({
-            owner,
-            mainState: mainStateAccount,
-            systemProgram: web3.SystemProgram.programId,
-            allowTokenStateAccount,
-            token: current,
-        }).rpc();
-        log("Res: ", res);
-    })
+    //     const res = await program.methods.allowToken().accounts({
+    //         owner,
+    //         mainState: mainStateAccount,
+    //         systemProgram: web3.SystemProgram.programId,
+    //         allowTokenStateAccount,
+    //         token: current,
+    //     }).rpc();
+    //     log("Res: ", res);
+    // })
 
     //     it("DisAllow token: ", async () => {
     //         const a = new web3.PublicKey("D8jzT2tFPoneyG8vXer6Krw1hCfXrAWCAAKUqfMp9QC3")
@@ -91,6 +91,17 @@ describe("Adming Calls", () => {
     //         }).rpc();
 
     //     })
+
+    it("Tranfer OwnerShip", async () => {
+        const res = await program.methods.updateMainStateOwner(new web3.PublicKey("Ck1sj5K9ERW36ZnPJQ4d19SS4QCrkYJQprfZJzWD7Sen")).accounts({
+            systemProgram: web3.SystemProgram.programId,
+            mainStateAccount,
+            owner,
+        }).rpc();
+
+        log("REs: ", res);
+
+    })
 
     // it("Fetch main state ", async () => {
     //     const res = await program.account.mainState.fetch(mainStateAccount);

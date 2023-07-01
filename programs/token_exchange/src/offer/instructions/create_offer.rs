@@ -45,17 +45,17 @@ pub fn create_offer(
     offer_state.requested_amount = requested_amount;
     offer_state.min_offered_amount = min_offered_amount;
     offer_state.is_active = true;
-    if offered_token_decimal > requested_token_decimal{
-        let diff = offered_token_decimal - requested_token_decimal;
-        offer_state.ratio = (requested_amount * 10u64.pow(diff as u32)) as f64 / offered_token_decimal as f64 ;
+    // if offered_token_decimal > requested_token_decimal{
+    //     let diff = offered_token_decimal - requested_token_decimal;
+    //     offer_state.ratio = (requested_amount * 10u64.pow(diff as u32)) as f64 / offered_token_decimal as f64 ;
 
-    }else if offered_token_decimal < requested_token_decimal{
-        let diff = requested_token_decimal - offered_token_decimal;
-        offer_state.ratio = requested_amount as f64 / (offered_amount * 10u64.pow(diff as u32)) as f64;
+    // }else if offered_token_decimal < requested_token_decimal{
+    //     let diff = requested_token_decimal - offered_token_decimal;
+    //     offer_state.ratio = requested_amount as f64 / (offered_amount * 10u64.pow(diff as u32)) as f64;
 
-    }else{
-        offer_state.ratio = requested_amount as f64 / offered_amount as f64 ;
-    }
+    // }else{
+    //     offer_state.ratio = requested_amount as f64 / offered_amount as f64 ;
+    // }
 
     //NOTE: Transfering the fees
     let fees = (main_state.fee_rate * offered_amount as f64) as u64;
@@ -84,7 +84,7 @@ pub fn create_offer(
         offered_amount,
         requested_amount,
         min_offered_amount,
-        ratio: ctx.accounts.offer_state_account.ratio, 
+        // ratio: ctx.accounts.offer_state_account.ratio, 
     });
     Ok(())
 }

@@ -14,15 +14,23 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     let offer_state_ata= ctx.accounts.offer_state_account_ata.to_account_info();
     let token_program= ctx.accounts.token_program.to_account_info();
 
+    if acceptor.key() == offer_state.offeror {
+        return anchor_lang::err!(MyError::SelfOfferAccept);
+    }
+
     if !offer_state.is_active{
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
+    // ??? - Check too high amount
+
     if amount < offer_state.min_offered_amount{
         return anchor_lang::err!(MyError::TooLowAmount);
     }
-    let requested_amount = (amount  as f64 * offer_state.ratio) as u64;
-    
+
+    // let requested_amount = (amount  as f64 * offer_state.ratio) as u64;
+    let requested_amount = (offer_state.requested_amount as u128 * amount as u128) as u64 / offer_state.offered_amount; // ??? - wrong
+
     //NOTE: Transfering the fees
     let fees = (main_state.fee_rate * requested_amount as f64) as u64;
     msg!("Fees : {}",fees);
