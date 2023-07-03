@@ -1,15 +1,18 @@
 [features]
 seeds = false
 skip-lint = false
+[programs.localnet]
+token_exchange = "6seUT1pKL6JkQpgzDp8aAfmkCyQFc7wMS9912PNaKDCw"
 [programs.devnet]
-token_exchange = "2mcXtmhv184eihwhqxvoD41QWyuDm4DirpFwHkpCrxyM"
+token_exchange = "6seUT1pKL6JkQpgzDp8aAfmkCyQFc7wMS9912PNaKDCw"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
-wallet = "/home/vc/.config/solana/id.json"
+cluster = "localnet"
+#cluster = "devnet"
+wallet = "/root/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

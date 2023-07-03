@@ -8,7 +8,7 @@ use crate::{
         SEED_OFFER
     }, 
     offer::offer_state::OfferState, 
-    utils::{tranfer_token_from_offeror_state, tranfer_token}, error::MyError, events
+    utils::{transfer_token_from_offeror_state, transfer_token}, error::MyError, events
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize,  Default,Clone, Copy, Debug)]
@@ -35,8 +35,6 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
-    // ??? require(offer_state.offer == msg.sender, "Caller has not created the offer");
-
     if let Some(amount) = input.inc_received_token_amount.clone(){
         offer_state.requested_amount += amount;
     }
@@ -47,6 +45,8 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
             return anchor_lang::err!(MyError::ZeroRequestedAmount);
         }
     }
+
+    msg!("offer_state.requested_amount = {}", offer_state.requested_amount);
 
     // Reseting ratio
     // if offered_token_decimal > requested_token_decimal{
@@ -77,8 +77,8 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
     //        let fees = (main_state.fee_rate * amount as f64) as u64;
     //        offer_state.offered_amount += amount;
 
-    //        //NOTE: Tranfering Fees
-    //        tranfer_token(
+    //        //NOTE: Transfering Fees
+    //        transfer_token(
     //            offeror_ata.to_account_info(), 
     //            fee_receiver_ata.to_account_info(), 
     //            offeror.to_account_info(), 
@@ -86,8 +86,8 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
     //            fees
     //        )?;
 
-    //        //NOTE: Tranfering the offered_token amount to the program account
-    //        tranfer_token(
+    //        //NOTE: Transfering the offered_token amount to the program account
+    //        transfer_token(
     //            offeror_ata.to_account_info(), 
     //            offer_state_ata.to_account_info(),
     //            offeror.to_account_info(), 
@@ -101,8 +101,8 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
     //    if amount > 0{
     //        offer_state.offered_amount -= amount;
 
-    //        //NOTE: Tranfering the offered_token amount from the program account to offeror
-    //        tranfer_token_from_offeror_state(
+    //        //NOTE: Transfering the offered_token amount from the program account to offeror
+    //        transfer_token_from_offeror_state(
     //            offeror.to_account_info(), 
     //            offeror_ata.to_account_info(), 
     //            offer_state, 

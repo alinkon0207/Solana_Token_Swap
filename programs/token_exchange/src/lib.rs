@@ -2,7 +2,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("2mcXtmhv184eihwhqxvoD41QWyuDm4DirpFwHkpCrxyM");
+declare_id!("6seUT1pKL6JkQpgzDp8aAfmkCyQFc7wMS9912PNaKDCw");
 
 mod _main;
 mod allow_token;
@@ -60,9 +60,9 @@ pub mod token_exchange {
         ctx: Context<ACreateOffer>,
         offered_amount: u64,
         requested_amount: u64,
-        min_offered_amount: u64,
+        min_requested_amount: u64,
     ) -> Result<()> {
-        offer::create_offer(ctx, offered_amount, requested_amount, min_offered_amount)?;
+        offer::create_offer(ctx, offered_amount, requested_amount, min_requested_amount)?;
         Ok(())
     }
 

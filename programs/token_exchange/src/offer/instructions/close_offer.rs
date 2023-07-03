@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self,Token,TokenAccount, Transfer};
 
-use crate::{_main::main_state::MainState, constants::{SEED_MAIN_STATE, SEED_OFFER}, offer::offer_state::OfferState, utils::tranfer_token_from_offeror_state, error::MyError, events};
+use crate::{_main::main_state::MainState, constants::{SEED_MAIN_STATE, SEED_OFFER}, offer::offer_state::OfferState, utils::transfer_token_from_offeror_state, error::MyError, events};
 
 pub fn close_offer(ctx: Context<ACloseOffer>)-> Result<()>{
     let offeror = ctx.accounts.offeror.to_account_info();
@@ -15,11 +15,9 @@ pub fn close_offer(ctx: Context<ACloseOffer>)-> Result<()>{
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
-    // ??? require(offer_state.offer == msg.sender, "Caller has not created the offer");
-
-    //NOTE: Let token amount tranfer back to the offeror
+    //NOTE: Let token amount transfer back to the offeror
     if offer_state.offered_amount > 0 {
-        tranfer_token_from_offeror_state(
+        transfer_token_from_offeror_state(
             offeror.to_account_info(), 
             offeror_ata, 
             offer_state, 

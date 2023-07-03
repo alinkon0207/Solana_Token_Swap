@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-use crate::{offer::offer_state::OfferState, constants::{SEED_OFFER, SEED_MAIN_STATE}, _main::main_state::MainState, utils::tranfer_token, error::MyError, events};
+use crate::{offer::offer_state::OfferState, constants::{SEED_OFFER, SEED_MAIN_STATE}, _main::main_state::MainState, utils::transfer_token, error::MyError, events};
 
 pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     let acceptor = ctx.accounts.acceptor.to_account_info();
@@ -10,31 +10,39 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     let offeror_requested_token_ata = ctx.accounts.offeror_requested_token_ata.to_account_info();
     let fee_receiver_ata = ctx.accounts.fee_receiver_ata.to_account_info();
     let main_state = & ctx.accounts.main_state_account;
-    let offer_state= &mut ctx.accounts.offer_state_account;
-    let offer_state_ata= ctx.accounts.offer_state_account_ata.to_account_info();
-    let token_program= ctx.accounts.token_program.to_account_info();
+    let offer_state = &mut ctx.accounts.offer_state_account;
+    let offer_state_ata = ctx.accounts.offer_state_account_ata.to_account_info();
+    let token_program = ctx.accounts.token_program.to_account_info();
 
     if acceptor.key() == offer_state.offeror {
         return anchor_lang::err!(MyError::SelfOfferAccept);
     }
 
-    if !offer_state.is_active{
+    if !offer_state.is_active {
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
-    // ??? - Check too high amount
-
-    if amount < offer_state.min_offered_amount{
+    // check if too high
+    if amount > offer_state.requested_amount {
+        return anchor_lang::err!(MyError::TooHighAmount);
+    }
+    // check if too low
+    if amount < offer_state.min_requested_amount {
         return anchor_lang::err!(MyError::TooLowAmount);
     }
 
-    // let requested_amount = (amount  as f64 * offer_state.ratio) as u64;
-    let requested_amount = (offer_state.requested_amount as u128 * amount as u128) as u64 / offer_state.offered_amount; // ??? - wrong
+    msg!("amount = {}", amount);
+
+    msg!("offer_state.offered_amount = {},  offer_state.requested_amount = {}", 
+        offer_state.offered_amount, offer_state.requested_amount);
+
+    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // serious bug existed (convertion to u64)
+    msg!("partial_offered_amount = {}", partial_offered_amount);
 
     //NOTE: Transfering the fees
-    let fees = (main_state.fee_rate * requested_amount as f64) as u64;
+    let fees = (main_state.fee_rate * amount as f64) as u64;
     msg!("Fees : {}",fees);
-    tranfer_token(
+    transfer_token(
         acceptor_requested_token_ata.to_account_info(), 
         fee_receiver_ata, 
         acceptor.to_account_info(), 
@@ -43,12 +51,12 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     ).map_err(|_|MyError::NotEnoughToken)?;
 
     //NOTE: Transfering the requested token to offeror ata
-    tranfer_token(
+    transfer_token(
         acceptor_requested_token_ata.to_account_info(), 
         offeror_requested_token_ata, 
         acceptor.to_account_info(), 
         token_program.to_account_info(), 
-        requested_amount, 
+        amount, 
     ).map_err(|_|MyError::NotEnoughToken)?;
 
     //NOTE: Transfering the offered token from contract accounts.
@@ -63,9 +71,9 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     );
     
     let cpi_accounts = Transfer{
-        authority: offer_state.to_account_info(),
-        from: offer_state_ata,
+        from: offer_state_ata, 
         to: acceptor_offered_token_ata,
+        authority: offer_state.to_account_info(),
     };
 
     token::transfer(CpiContext::new_with_signer(
@@ -80,14 +88,14 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
                 &[bump]
             ]
         ]
-    ), amount)?;
+    ), partial_offered_amount)?;
 
     //NOTE: set the state
-    offer_state.offered_amount -= amount;
-    offer_state.requested_amount -= requested_amount;
+    offer_state.offered_amount -= partial_offered_amount;
+    offer_state.requested_amount -= amount;
 
-    if offer_state.min_offered_amount > offer_state.offered_amount{
-        offer_state.min_offered_amount = offer_state.offered_amount;
+    if offer_state.min_requested_amount > offer_state.requested_amount {
+        offer_state.min_requested_amount = offer_state.requested_amount;
     }
 
     emit!(events::OfferAccepted{
@@ -95,7 +103,7 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
         amount: amount,
     });
 
-    if offer_state.offered_amount == 0{
+    if offer_state.requested_amount == 0{
         offer_state.re_init();
 
         emit!(events::OfferCompleted{
@@ -140,13 +148,15 @@ pub struct AAcceptOffer<'info> {
     // pub acceptor_requested_token_ata: Account<'info, TokenAccount>,
     pub acceptor_requested_token_ata: AccountInfo<'info>,
     
+    ///CHECK:
     #[account(
         mut,
-        token::mint = offer_state_account.requested_token,
-        token::authority =  offer_state_account.offeror,
+        // token::mint = offer_state_account.requested_token,
+        // token::authority =  offer_state_account.offeror,
     )]
-    pub offeror_requested_token_ata: Account<'info, TokenAccount>,
-
+    // pub offeror_requested_token_ata: Account<'info, TokenAccount>,
+    pub offeror_requested_token_ata: AccountInfo<'info>,
+    
     #[account(
         mut,
         seeds = [

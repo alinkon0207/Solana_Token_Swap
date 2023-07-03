@@ -18,7 +18,7 @@ pub struct OfferCreated {
     pub requested_token: Pubkey,
     pub offered_amount: u64,
     pub requested_amount: u64,
-    pub min_offered_amount: u64,
+    pub min_requested_amount: u64,
     // pub ratio: f64,
 }
 

@@ -3,7 +3,7 @@ use anchor_spl::token::{self, Token, Transfer};
 
 use crate::{constants::SEED_OFFER, offer::offer_state::OfferState};
 
-pub fn tranfer_token<'a>(
+pub fn transfer_token<'a>(
     from: AccountInfo<'a>,
     to: AccountInfo<'a>,
     authority: AccountInfo<'a>,
@@ -22,7 +22,7 @@ pub fn tranfer_token<'a>(
     Ok(())
 }
 
-pub fn tranfer_token_from_offeror_state<'a>(
+pub fn transfer_token_from_offeror_state<'a>(
     offeror: AccountInfo<'a>,
     offeror_ata: AccountInfo<'a>,
     offer_state: &mut Account<'a, OfferState>,

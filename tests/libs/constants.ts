@@ -1,6 +1,4 @@
-export const GLOBAL_STATE_SEED = "GLOBAL_STATE_SEED";
-export const USER_STATE_SEED = "USER_STATE_SEED";
 
-export const USDC_DECIMALS = 6;
-
-export const MetadataProgramId = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
+export const SEND_TOKEN_AMOUNT = 1000;
+export const RECV_TOKEN_AMOUNT = 100;
+export const TOKEN_DECIMALS = 6; // Remark - Above or equal to 8 isn't allowed

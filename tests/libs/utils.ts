@@ -7,7 +7,7 @@ import {
   Program,
   getProvider,
   Wallet,
-} from "@project-serum/anchor";
+} from "@coral-xyz/anchor";
 import {
   Connection,
   PublicKey,
