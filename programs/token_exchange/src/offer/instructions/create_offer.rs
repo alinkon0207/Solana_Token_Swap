@@ -24,16 +24,10 @@ pub fn create_offer(
     let offered_token_allowed_checker = ctx.accounts.offered_token_allowed_checker.to_account_info();
     let requested_token_allowed_checker = ctx.accounts.requested_token_allowed_checker.to_account_info();
 
-    // msg!("Hey, I'm a debugger!");
-    // msg!("{}, {}, {}", offered_amount, requested_amount, min_requested_amount);
-    
 
     if offered_token_allowed_checker.owner != ctx.program_id || requested_token_allowed_checker.owner != ctx.program_id{
         return anchor_lang::err!(MyError::TokenNotAllowed);
     }
-
-    let offered_token_decimal = Mint::try_deserialize(&mut &* ctx.accounts.offered_token.data.take())?.decimals;
-    let requested_token_decimal = Mint::try_deserialize(&mut &* ctx.accounts.requested_token.data.take())?.decimals;
 
     if offer_state.is_active {
         return anchor_lang::err!(MyError::OfferAlreadyCreated);
@@ -42,31 +36,15 @@ pub fn create_offer(
     if min_requested_amount > requested_amount {
         return anchor_lang::err!(MyError::TooHighAmount);
     }
-
-    // ??? - check balance
-    // let offered_amount = offer_ata.amount;
-    // msg!("total offered_amount = {}", offered_amount);
-
+    
     //NOTE: seting state
     offer_state.offered_amount = offered_amount;
     offer_state.requested_amount = requested_amount;
     offer_state.min_requested_amount = min_requested_amount;
     offer_state.is_active = true;
-    // if offered_token_decimal > requested_token_decimal{
-    //     let diff = offered_token_decimal - requested_token_decimal;
-    //     offer_state.ratio = (requested_amount * 10u64.pow(diff as u32)) as f64 / offered_token_decimal as f64 ;
-
-    // }else if offered_token_decimal < requested_token_decimal{
-    //     let diff = requested_token_decimal - offered_token_decimal;
-    //     offer_state.ratio = requested_amount as f64 / (offered_amount * 10u64.pow(diff as u32)) as f64;
-
-    // }else{
-    //     offer_state.ratio = requested_amount as f64 / offered_amount as f64 ;
-    // }
 
     //NOTE: Transfering the fees
     let fees = (main_state.fee_rate * offered_amount as f64) as u64;
-    // msg!("fees = {}", fees);
     transfer_token(
         offeror_ata.to_account_info(),
         fee_receiver_ata,
@@ -92,7 +70,6 @@ pub fn create_offer(
         offered_amount,
         requested_amount,
         min_requested_amount,
-        // ratio: ctx.accounts.offer_state_account.ratio, 
     });
     Ok(())
 }

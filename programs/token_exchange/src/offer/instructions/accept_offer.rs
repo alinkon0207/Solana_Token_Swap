@@ -31,13 +31,7 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
         return anchor_lang::err!(MyError::TooLowAmount);
     }
 
-    msg!("amount = {}", amount);
-
-    msg!("offer_state.offered_amount = {},  offer_state.requested_amount = {}", 
-        offer_state.offered_amount, offer_state.requested_amount);
-
-    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // serious bug existed (convertion to u64)
-    msg!("partial_offered_amount = {}", partial_offered_amount);
+    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // ilesovoy - potential bug (multiplied value can exceed u64)
 
     //NOTE: Transfering the fees
     let fees = (main_state.fee_rate * amount as f64) as u64;

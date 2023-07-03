@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { web3 } from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { TokenExchange/*, EditOfferInput*/ } from "../target/types/token_exchange";
+import { TokenExchange } from "../target/types/token_exchange";
 import {
     LAMPORTS_PER_SOL,
     Keypair,
@@ -49,7 +49,7 @@ describe("Token_Swap", () => {
         SEED_ALLOWED_TOKEN: utf8.encode("allowed_token1"),
         SEED_OFFER: utf8.encode("offer8"),
     }
-    
+
     const mainStateAccount: PublicKey = web3.PublicKey.findProgramAddressSync([Seeds.SEED_MAIN_STATE], programId)[0];
     const feeReceiver: PublicKey = new web3.PublicKey("2JBAzzmqZwgi9MjKXsQehtcZyUrTta5jdxSiAi8onaaZ")
 

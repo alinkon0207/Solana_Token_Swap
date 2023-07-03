@@ -19,7 +19,6 @@ pub struct OfferCreated {
     pub offered_amount: u64,
     pub requested_amount: u64,
     pub min_requested_amount: u64,
-    // pub ratio: f64,
 }
 
 #[event]
@@ -33,7 +32,6 @@ pub struct OfferUpdated {
     pub offer_id: Pubkey,
     pub inc_requested_amount: Option<u64>,
     pub dec_requested_amount: Option<u64>,
-    // pub ratio: f64,
 }
 
 #[event]
