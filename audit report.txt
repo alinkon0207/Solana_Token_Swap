@@ -1,0 +1,15 @@
+My audit results are the following.
+1. Found a serious bug in accept_offer function.
+Because the developer didn't understand token exchange logic, he was confused with offering & request on accept. So he coded wrong accept_offer function.
+I found this bug and wrote this function nearly new.
+2. Coded unit-test script and experimented in localnet to verify the accuracy of smart contract.
+In fact, this is a developer's task. But he didn't this task nearly at all.
+So I coded unit-test script and made sure the experiment result and my manual calculations are identical.
+3. Found a potential bug.
+TOKEN_DECIMALS must not be set as a high value (above 8). Below or equal to 6 is recommended.
+Because in our smart contract, it performs big-number multiplication & divison so it is possible that overflow could occur.
+Therfore, we should pay attention to token decimals and make sure overflow couldn't occur.
+4. Reviewed all account security checks and complemented missing parts
+  Due to incomplete account security check, Warmhole Solana to ETH bridge was hacked and about 155M$ was stolen. Account security check is so important.
+  But the junior dev couldn't complete account security check.
+  So I reviewed all security checks and complemented missing parts.
