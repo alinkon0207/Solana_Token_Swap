@@ -43,6 +43,7 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
         inc_requested_amount: input.inc_received_token_amount,
         dec_requested_amount: input.dec_received_token_amount,
     });
+
     Ok(())
 }
 

@@ -1,6 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { web3 } from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import { web3, Program, AnchorError } from "@coral-xyz/anchor";
 import { utf8 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { TokenExchange } from "../target/types/token_exchange";
 import {
@@ -29,6 +28,7 @@ import { airdropSol, createAta } from "./libs/utils";
 import { SEND_TOKEN_AMOUNT, RECV_TOKEN_AMOUNT, TOKEN_DECIMALS} from "./libs/constants";
 import * as bs58 from "bs58";
 import { simulateTransaction } from "@coral-xyz/anchor/dist/cjs/utils/rpc";
+import { expect, assert, use as chaiUse } from "chai";
 
 
 interface EditOfferInput {
@@ -49,7 +49,7 @@ describe("Token_Swap", () => {
         SEED_ALLOWED_TOKEN: utf8.encode("allowed_token1"),
         SEED_OFFER: utf8.encode("offer8"),
     }
-
+    
     const mainStateAccount: PublicKey = web3.PublicKey.findProgramAddressSync([Seeds.SEED_MAIN_STATE], programId)[0];
     const feeReceiver: PublicKey = new web3.PublicKey("2JBAzzmqZwgi9MjKXsQehtcZyUrTta5jdxSiAi8onaaZ")
 
@@ -350,6 +350,12 @@ describe("Token_Swap", () => {
             tokenProgram: TOKEN_PROGRAM_ID
         }).signers([acceptor])
         .rpc();
+        
+        /*
+        res.feePayer = acceptor.publicKey;
+        res.recentBlockhash = (await (connection as web3.Connection).getLatestBlockhash()).blockhash;
+        console.log("res =", await (connection as web3.Connection).simulateTransaction((res as Transaction).compileMessage(), [acceptor]));
+        */
 
         printBalances();
     })
@@ -376,7 +382,7 @@ describe("Token_Swap", () => {
         let res;
 
         res = await program.methods.acceptOffer(
-            new anchor.BN(calcNonDecimalValue(RECV_TOKEN_AMOUNT * 2 / 5, TOKEN_DECIMALS))
+            new anchor.BN(calcNonDecimalValue(RECV_TOKEN_AMOUNT * 4 / 5, TOKEN_DECIMALS))
         ).accounts({
             acceptor: acceptor.publicKey,
             offeredToken: sendToken,
@@ -398,19 +404,25 @@ describe("Token_Swap", () => {
     it("Close offer", async () => {
         let res;
 
-        res = await program.methods.closeOffer().accounts({
-            offeror: offeror.publicKey,
-            offeredToken: sendToken,
-            requestedToken: recvToken,
-            mainStateAccount,
-            offerStateAccount,
-            offerorAta: offerorSendTokenAta,
-            offerStateAccountAta,
-            tokenProgram: TOKEN_PROGRAM_ID
-        }).signers([offeror])
-        .rpc();
+        try {
+            res = await program.methods.closeOffer().accounts({
+                offeror: offeror.publicKey,
+                offeredToken: sendToken,
+                requestedToken: recvToken,
+                mainStateAccount,
+                offerStateAccount,
+                offerorAta: offerorSendTokenAta,
+                offerStateAccountAta,
+                tokenProgram: TOKEN_PROGRAM_ID
+            }).signers([offeror]).rpc();
 
-        printBalances();
+            printBalances();
+        } catch (err) {
+            // console.log(err)
+            expect(err).to.be.instanceOf(AnchorError)
+            expect((err as AnchorError).error.errorCode.number).to.equal(6008)
+            console.log((err as AnchorError).error.errorCode)
+        }
     })
 
     it("Disallow tokens", async () => {
@@ -418,7 +430,7 @@ describe("Token_Swap", () => {
         let res;
 
         allowTokenStateAccount = __getAllowTokenCheckAccount(sendToken);
-        console.log("Disallow sendToken state: ", allowTokenStateAccount.toBase58());
+        // console.log("Disallow sendToken state: ", allowTokenStateAccount.toBase58());
 
         res = await program.methods.disallowToken().accounts({
             owner,
@@ -429,7 +441,7 @@ describe("Token_Swap", () => {
         }).rpc();
 
         allowTokenStateAccount = __getAllowTokenCheckAccount(recvToken);
-        console.log("Disallow recvToken state: ", allowTokenStateAccount.toBase58());
+        // console.log("Disallow recvToken state: ", allowTokenStateAccount.toBase58());
 
         res = await program.methods.disallowToken().accounts({
             owner,

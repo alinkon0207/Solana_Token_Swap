@@ -52,7 +52,6 @@ pub struct ACloseOffer<'info> {
 
     #[account(
         mut,
-        // close = offeror, //BUG: create and errors
         seeds = [
             SEED_OFFER, 
             offer_state_account.offeror.as_ref(),

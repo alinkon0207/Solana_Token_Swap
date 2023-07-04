@@ -31,11 +31,16 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
         return anchor_lang::err!(MyError::TooLowAmount);
     }
 
-    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // ilesovoy - potential bug (multiplied value can exceed u64)
-
     //NOTE: Transfering the fees
     let fees = (main_state.fee_rate * amount as f64) as u64;
-    msg!("Fees : {}",fees);
+
+    // ilesoviy - check remaining balance
+    if amount + fees > ctx.accounts.acceptor_requested_token_ata.amount {
+        return anchor_lang::err!(MyError::NotEnoughToken);
+    }
+    
+    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // ilesovoy - potential bug (multiplied value can exceed u64)
+
     transfer_token(
         acceptor_requested_token_ata.to_account_info(), 
         fee_receiver_ata, 
@@ -114,48 +119,44 @@ pub struct AAcceptOffer<'info> {
     pub acceptor: Signer<'info>,
 
     ///CHECK:
-    pub offered_token: AccountInfo<'info>,
+    pub offered_token: Box<Account<'info, Mint>>,
     ///CHECK:
-    pub requested_token: AccountInfo<'info>,
+    pub requested_token: Box<Account<'info, Mint>>,
 
     #[account(
         seeds = [SEED_MAIN_STATE],
         bump,
     )]
-    pub main_state_account: Account<'info, MainState>,
+    pub main_state_account: Box<Account<'info, MainState>>,
 
     ///CHECK:
     #[account(
         mut,
-        // token::mint = offer_state_account.offered_token,
-        // token::authority = acceptor
+        token::mint = offer_state_account.offered_token,
+        token::authority = acceptor
     )]
-    // pub acceptor_offered_token_ata: Account<'info, TokenAccount>,
-    pub acceptor_offered_token_ata: AccountInfo<'info>,
+    pub acceptor_offered_token_ata: Box<Account<'info, TokenAccount>>,
 
     ///CHECK:
     #[account(
         mut,
-        // token::mint = offer_state_account.requested_token,
-        // token::authority = acceptor
+        token::mint = offer_state_account.requested_token,
+        token::authority = acceptor
     )]
-    // pub acceptor_requested_token_ata: Account<'info, TokenAccount>,
-    pub acceptor_requested_token_ata: AccountInfo<'info>,
+    pub acceptor_requested_token_ata: Box<Account<'info, TokenAccount>>,
     
     ///CHECK:
     #[account(
         mut,
-        // token::mint = offer_state_account.requested_token,
-        // token::authority =  offer_state_account.offeror,
+        token::mint = offer_state_account.requested_token,
+        token::authority =  offer_state_account.offeror,
     )]
-    // pub offeror_requested_token_ata: Account<'info, TokenAccount>,
-    pub offeror_requested_token_ata: AccountInfo<'info>,
+    pub offeror_requested_token_ata: Box<Account<'info, TokenAccount>>,
     
     #[account(
         mut,
         seeds = [
             SEED_OFFER, 
-            // offeror_requested_token_ata.owner.as_ref(), 
             offer_state_account.offeror.as_ref(),
             offered_token.key().as_ref(),
             requested_token.key().as_ref(),

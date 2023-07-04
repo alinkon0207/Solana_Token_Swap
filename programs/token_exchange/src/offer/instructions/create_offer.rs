@@ -23,7 +23,7 @@ pub fn create_offer(
     let token_program = ctx.accounts.token_program.to_account_info();
     let offered_token_allowed_checker = ctx.accounts.offered_token_allowed_checker.to_account_info();
     let requested_token_allowed_checker = ctx.accounts.requested_token_allowed_checker.to_account_info();
-
+    let fees = (main_state.fee_rate * offered_amount as f64) as u64;
 
     if offered_token_allowed_checker.owner != ctx.program_id || requested_token_allowed_checker.owner != ctx.program_id{
         return anchor_lang::err!(MyError::TokenNotAllowed);
@@ -36,7 +36,12 @@ pub fn create_offer(
     if min_requested_amount > requested_amount {
         return anchor_lang::err!(MyError::TooHighAmount);
     }
-    
+
+    // ilesoviy - check balance
+    if offered_amount + fees > ctx.accounts.offeror_ata.amount {
+        return anchor_lang::err!(MyError::NotEnoughToken);
+    }
+
     //NOTE: seting state
     offer_state.offered_amount = offered_amount;
     offer_state.requested_amount = requested_amount;
@@ -44,7 +49,6 @@ pub fn create_offer(
     offer_state.is_active = true;
 
     //NOTE: Transfering the fees
-    let fees = (main_state.fee_rate * offered_amount as f64) as u64;
     transfer_token(
         offeror_ata.to_account_info(),
         fee_receiver_ata,
