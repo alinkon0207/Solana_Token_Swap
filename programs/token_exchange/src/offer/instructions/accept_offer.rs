@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-use crate::{offer::offer_state::OfferState, constants::{SEED_OFFER, SEED_MAIN_STATE}, _main::main_state::MainState, utils::transfer_token, error::MyError, events};
+use crate::{offer::offer_state::OfferState, constants::{SEED_OFFER, SEED_MAIN_STATE}, _main::main_state::MainState, utils::{transfer_token, , transfer_token_from_offeror_state}, error::MyError, events};
 
 pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     let acceptor = ctx.accounts.acceptor.to_account_info();
@@ -31,6 +31,8 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
         return anchor_lang::err!(MyError::TooLowAmount);
     }
 
+    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // ilesovoy - potential bug (multiplied value can exceed u64)
+
     //NOTE: Transfering the fees
     let fees = (main_state.fee_rate * amount as f64) as u64;
 
@@ -38,8 +40,6 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
     if amount + fees > ctx.accounts.acceptor_requested_token_ata.amount {
         return anchor_lang::err!(MyError::NotEnoughToken);
     }
-    
-    let partial_offered_amount = (offer_state.offered_amount as u128 * amount as u128) as u64 / offer_state.requested_amount;  // ilesovoy - potential bug (multiplied value can exceed u64)
 
     transfer_token(
         acceptor_requested_token_ata.to_account_info(), 
@@ -58,58 +58,34 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
         amount, 
     ).map_err(|_|MyError::NotEnoughToken)?;
 
-    //NOTE: Transfering the offered token from contract accounts.
-    let (_, bump) = Pubkey::find_program_address(
-        &[
-            SEED_OFFER, 
-            offer_state.offeror.key().as_ref(), 
-            ctx.accounts.offered_token.key().as_ref(),
-            ctx.accounts.requested_token.key().as_ref(),
-        ], 
-        ctx.program_id
-    );
-    
-    let cpi_accounts = Transfer{
-        from: offer_state_ata, 
-        to: acceptor_offered_token_ata,
-        authority: offer_state.to_account_info(),
-    };
-
-    token::transfer(CpiContext::new_with_signer(
+    //NOTE: Transfer token from program account to acceptor
+    transfer_token_from_offeror_state(
+        offer_state, 
+        offer_state_ata, 
+        acceptor_offered_token_ata, 
         token_program, 
-        cpi_accounts, 
-        &[
-            &[
-                SEED_OFFER, 
-                offer_state.offeror.key().as_ref(), 
-                ctx.accounts.offered_token.key().as_ref(),
-                ctx.accounts.requested_token.key().as_ref(),
-                &[bump]
-            ]
-        ]
-    ), partial_offered_amount)?;
+        deducted_offered_amount
+    )?;
 
     //NOTE: set the state
     offer_state.offered_amount -= partial_offered_amount;
     offer_state.requested_amount -= amount;
-
-    if offer_state.min_requested_amount > offer_state.requested_amount {
-        offer_state.min_requested_amount = offer_state.requested_amount;
-    }
 
     emit!(events::OfferAccepted{
         offer_id: offer_state.key(),
         amount: amount,
     });
 
-    if offer_state.requested_amount == 0{
-        offer_state.re_init();
-
-        emit!(events::OfferCompleted{
-            offer_id: offer_state.key(),
-        });
+    if offer_state.min_requested_amount > offer_state.requested_amount {
+		if offer_state.requested_amount == 0 {
+			emit!(events::OfferCompleted{
+                offer_id: offer_state.key(),
+            });
+			offer_state.re_init();
+		}
+		else
+        	offer_state.min_requested_amount = offer_state.requested_amount;
     }
-
 
     Ok(())
 }
@@ -118,48 +94,35 @@ pub fn accept_offer(ctx: Context<AAcceptOffer>, amount: u64) -> Result<()> {
 pub struct AAcceptOffer<'info> {
     pub acceptor: Signer<'info>,
 
-    ///CHECK:
-    pub offered_token: Box<Account<'info, Mint>>,
-    ///CHECK:
-    pub requested_token: Box<Account<'info, Mint>>,
-
     #[account(
         seeds = [SEED_MAIN_STATE],
         bump,
     )]
-    pub main_state_account: Box<Account<'info, MainState>>,
+    pub main_state_account: Account<'info, MainState>,
 
     ///CHECK:
-    #[account(
-        mut,
-        token::mint = offer_state_account.offered_token,
-        token::authority = acceptor
-    )]
-    pub acceptor_offered_token_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub acceptor_offered_token_ata: AccountInfo<'info>,
 
     ///CHECK:
-    #[account(
-        mut,
-        token::mint = offer_state_account.requested_token,
-        token::authority = acceptor
-    )]
-    pub acceptor_requested_token_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub acceptor_requested_token_ata: AccountInfo<'info>,
     
-    ///CHECK:
     #[account(
         mut,
         token::mint = offer_state_account.requested_token,
         token::authority =  offer_state_account.offeror,
     )]
-    pub offeror_requested_token_ata: Box<Account<'info, TokenAccount>>,
-    
+    pub offeror_requested_token_ata: Account<'info, TokenAccount>,
+
     #[account(
         mut,
         seeds = [
             SEED_OFFER, 
+            offer_state_account.init_time.to_le_bytes().as_ref(),
             offer_state_account.offeror.as_ref(),
-            offered_token.key().as_ref(),
-            requested_token.key().as_ref(),
+            offer_state_account.offered_token.key().as_ref(),
+            offer_state_account.requested_token.key().as_ref(),
         ],
         bump,
     )]
@@ -167,14 +130,14 @@ pub struct AAcceptOffer<'info> {
 
     #[account(
         mut,
-        token::mint = offered_token,
+        token::mint = offer_state_account.offered_token,
         token::authority = offer_state_account,
     )]
     pub offer_state_account_ata: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        token::mint = requested_token,
+        token::mint = offer_state_account.requested_token,
         token::authority = main_state_account.fee_receiver,
     )]
     pub fee_receiver_ata: Account<'info ,TokenAccount>,

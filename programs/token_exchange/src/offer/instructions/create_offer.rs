@@ -67,10 +67,10 @@ pub fn create_offer(
     )?;
 
     emit!(events::OfferCreated{
-        offer_id: ctx.accounts.offer_state_account.key(),
+        offer_id: offer_state.key(),
         offeror: ctx.accounts.offeror.key(), 
-        offered_token: ctx.accounts.offered_token.key(),
-        requested_token: ctx.accounts.requested_token.key(),
+        offered_token: offer_state.offered_token,
+        requested_token: offer_state.requested_token,
         offered_amount,
         requested_amount,
         min_requested_amount,
@@ -95,7 +95,7 @@ pub struct ACreateOffer<'info> {
 
     #[account(
         mut,
-        token::mint = offered_token,
+        token::mint = offer_state_account.offered_token,
         token::authority = offeror
     )]
     pub offeror_ata: Account<'info, TokenAccount>,
@@ -104,9 +104,10 @@ pub struct ACreateOffer<'info> {
         mut,
         seeds = [
             SEED_OFFER, 
-            offeror.key().as_ref(), 
-            offered_token.key().as_ref(),
-            requested_token.key().as_ref(),
+            offer_state_account.init_time.to_le_bytes().as_ref(),
+            offeror.key().as_ref(),
+            offer_state_account.offered_token.key().as_ref(),
+            offer_state_account.requested_token.key().as_ref(),
         ],
         bump,
     )]
@@ -114,7 +115,7 @@ pub struct ACreateOffer<'info> {
 
     #[account(
         mut,
-        token::mint = offered_token,
+        token::mint = offer_state_account.offered_token,
         token::authority = offer_state_account,
     )]
     pub offer_state_account_ata: Account<'info, TokenAccount>,
@@ -122,7 +123,7 @@ pub struct ACreateOffer<'info> {
     ///CHECK:
     #[account(
         mut,
-        seeds = [SEED_ALLOWED_TOKEN, offered_token.key().as_ref()],
+        seeds = [SEED_ALLOWED_TOKEN, offer_state_account.offered_token.key().as_ref()],
         bump,
     )]
     pub offered_token_allowed_checker: AccountInfo<'info>,
@@ -130,14 +131,14 @@ pub struct ACreateOffer<'info> {
     ///CHECK:
     #[account(
         mut,
-        seeds = [SEED_ALLOWED_TOKEN, requested_token.key().as_ref()],
+        seeds = [SEED_ALLOWED_TOKEN, offer_state_account.requested_token.key().as_ref()],
         bump,
     )]
     pub requested_token_allowed_checker: AccountInfo<'info>,
 
     #[account(
         mut,
-        token::mint = offered_token,
+        token::mint = offer_state_account.offered_token,
         token::authority = main_state_account.fee_receiver,
     )]
     pub fee_receiver_ata: Account<'info, TokenAccount>,

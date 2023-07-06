@@ -13,8 +13,8 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize,  Default,Clone, Copy, Debug)]
 pub struct EditOfferInput{
-    inc_received_token_amount: Option<u64>, 
-    dec_received_token_amount: Option<u64>
+    new_requested_token_amount: Option<u64>, 
+    new_min_requested_token_amount: Option<u64>
 }
 
 pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
@@ -27,21 +27,24 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
         return anchor_lang::err!(MyError::OfferNotActive);
     }
 
-    if let Some(amount) = input.inc_received_token_amount.clone() {
-        offer_state.requested_amount += amount;
-    }
-
-    if let Some(amount) = input.dec_received_token_amount.clone() {
-        offer_state.requested_amount -= amount;
-        if offer_state.requested_amount == 0{
+    if let Some(amount) = input.new_requested_token_amount.clone() {
+        if amount == 0{
             return anchor_lang::err!(MyError::ZeroRequestedAmount);
         }
+        offer_state.requested_amount = amount;
+    }
+
+    if let Some(amount) = input.new_min_requested_token_amount.clone() {
+        if amount > offer_state.requested_amount{
+            return anchor_lang::err!(MyError::TooHighAmount);
+        }
+		offer_state.min_requested_amount = amount;
     }
 
     emit!(events::OfferUpdated{
         offer_id: ctx.accounts.offer_state_account.key(),
-        inc_requested_amount: input.inc_received_token_amount,
-        dec_requested_amount: input.dec_received_token_amount,
+        new_requested_token_amount: input.new_requested_token_amount,
+        new_min_requested_token_amount: input.new_min_requested_token_amount,
     });
 
     Ok(())
@@ -51,11 +54,6 @@ pub fn edit_offer(ctx:Context<AEditOffer>, input: EditOfferInput) ->Result<()>{
 #[derive(Accounts)]
 pub struct AEditOffer<'info>{
     pub offeror:Signer<'info>,
-
-    ///CHECK:
-    pub offered_token: AccountInfo<'info>,
-    ///CHECK:
-    pub requested_token: AccountInfo<'info>,
 
     #[account(
         seeds = [SEED_MAIN_STATE],
@@ -67,9 +65,10 @@ pub struct AEditOffer<'info>{
         mut,
         seeds = [
             SEED_OFFER, 
-            offer_state_account.offeror.as_ref(),
-            offered_token.key().as_ref(),
-            requested_token.key().as_ref(),
+            offer_state_account.init_time.to_le_bytes().as_ref(),
+            offeror.key().as_ref(),
+            offer_state_account.offered_token.key().as_ref(),
+            offer_state_account.requested_token.key().as_ref(),
         ],
         bump,
     )]

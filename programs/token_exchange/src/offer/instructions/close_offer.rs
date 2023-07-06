@@ -18,10 +18,9 @@ pub fn close_offer(ctx: Context<ACloseOffer>)-> Result<()>{
     //NOTE: Let token amount transfer back to the offeror
     if offer_state.offered_amount > 0 {
         transfer_token_from_offeror_state(
-            offeror.to_account_info(), 
-            offeror_ata, 
             offer_state, 
             offer_state_account_ata, 
+            offeror_ata, 
             token_program, 
             offer_state.offered_amount
         )?;
@@ -54,9 +53,10 @@ pub struct ACloseOffer<'info> {
         mut,
         seeds = [
             SEED_OFFER, 
-            offer_state_account.offeror.as_ref(),
-            offered_token.key().as_ref(),
-            requested_token.key().as_ref(),
+            offer_state_account.init_time.to_le_bytes().as_ref(),
+            offeror.key().as_ref(),
+            offer_state_account.offered_token.key().as_ref(),
+            offer_state_account.requested_token.key().as_ref(),
         ],
         bump,
     )]
@@ -65,14 +65,14 @@ pub struct ACloseOffer<'info> {
     ///CHECK:
     #[account(
         mut,
-        token::mint = offered_token,
+        token::mint = offer_state_account.offered_token,
         token::authority = offeror,
     )]
     pub offeror_ata: Account<'info, TokenAccount>,
     
     #[account(
         mut,
-        token::mint = offered_token,
+        token::mint = offer_state_account.offered_token,
         token::authority = offer_state_account,
     )]
     pub offer_state_account_ata: Account<'info, TokenAccount>,

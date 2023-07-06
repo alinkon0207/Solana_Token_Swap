@@ -8,6 +8,7 @@ pub struct OfferState {
     pub offered_amount: u64,
     pub requested_amount: u64,
     pub min_requested_amount: u64,
+    pub init_time: i64,
     pub is_active: bool,
 }
 

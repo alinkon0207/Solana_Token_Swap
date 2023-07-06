@@ -10,7 +10,7 @@ use crate::{
     offer::offer_state::OfferState, error::MyError,
 };
 
-pub fn init_offer_state(ctx: Context<AInitOfferState>) -> Result<()> {
+pub fn init_offer_state(ctx: Context<AInitOfferState>, init_time: i64) -> Result<()> {
     let state = &mut ctx.accounts.offer_state_account;
 
     let offered_token_allowed_checker = ctx.accounts.offered_token_allowed_checker.to_account_info();
@@ -23,11 +23,13 @@ pub fn init_offer_state(ctx: Context<AInitOfferState>) -> Result<()> {
     state.offeror = ctx.accounts.offeror.key();
     state.offered_token = ctx.accounts.offered_token.key();
     state.requested_token = ctx.accounts.requested_token.key();
+    state.init_time = init_time;
 
     Ok(())
 }
 
 #[derive(Accounts)]
+#[instruction(init_time: i64)]
 pub struct AInitOfferState<'info> {
     #[account(mut)]
     pub offeror: Signer<'info>,
@@ -40,6 +42,7 @@ pub struct AInitOfferState<'info> {
         payer= offeror,
         seeds=[
             SEED_OFFER, 
+            init_time.to_le_bytes().as_ref(),
             offeror.key().as_ref(), 
             offered_token.key().as_ref(), 
             requested_token.key().as_ref()

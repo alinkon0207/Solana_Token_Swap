@@ -30,8 +30,8 @@ pub struct OfferAccepted {
 #[event]
 pub struct OfferUpdated {
     pub offer_id: Pubkey,
-    pub inc_requested_amount: Option<u64>,
-    pub dec_requested_amount: Option<u64>,
+    pub new_requested_token_amount: Option<u64>,
+    pub new_min_requested_token_amount: Option<u64>,
 }
 
 #[event]

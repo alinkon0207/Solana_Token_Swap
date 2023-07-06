@@ -51,8 +51,8 @@ pub mod token_exchange {
     }
 
     //NOTE: User Calls
-    pub fn init_offer_state(ctx: Context<AInitOfferState>) -> Result<()> {
-        offer::init_offer_state(ctx)?;
+    pub fn init_offer_state(ctx: Context<AInitOfferState>, init_time: i64) -> Result<()> {
+        offer::init_offer_state(ctx, init_time)?;
         Ok(())
     }
 

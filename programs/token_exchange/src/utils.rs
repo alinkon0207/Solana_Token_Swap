@@ -23,16 +23,16 @@ pub fn transfer_token<'a>(
 }
 
 pub fn transfer_token_from_offeror_state<'a>(
-    offeror: AccountInfo<'a>,
-    offeror_ata: AccountInfo<'a>,
     offer_state: &mut Account<'a, OfferState>,
     offer_state_account_ata: AccountInfo<'a>,
+    receiver_ata: AccountInfo<'a>,
     token_program: AccountInfo<'a>,
     amount: u64,
 ) -> Result<()> {
     let (_, bump) = Pubkey::find_program_address(
         &[
             SEED_OFFER,
+            offer_state.init_time.to_le_bytes().as_ref(),
             offer_state.offeror.as_ref(),
             offer_state.offered_token.key().as_ref(),
             offer_state.requested_token.key().as_ref(),
@@ -42,7 +42,7 @@ pub fn transfer_token_from_offeror_state<'a>(
 
     let cpi_accounts = Transfer {
         from: offer_state_account_ata,
-        to: offeror_ata,
+        to: receiver_ata,
         authority: offer_state.to_account_info(),
     };
 
@@ -52,6 +52,7 @@ pub fn transfer_token_from_offeror_state<'a>(
             cpi_accounts,
             &[&[
                 SEED_OFFER,
+                offer_state.init_time.to_le_bytes().as_ref(),
                 offer_state.offeror.as_ref(),
                 offer_state.offered_token.key().as_ref(),
                 offer_state.requested_token.key().as_ref(),
